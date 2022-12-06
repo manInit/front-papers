@@ -2,10 +2,6 @@ const $playerScore = document.querySelector('#score1')
 const $playerVideo = document.querySelector('#player-video')
 const $playerHand = document.querySelector('#player-hand')
 
-const $robotScore = document.querySelector('#score2')
-const $robotImage = document.querySelector('#robot')
-const $robotHand = document.querySelector('#robot-hand')
-
 const $statusText = document.querySelector('#message')
 
 const $timerRing = document.querySelector('#timer-ring')
@@ -85,7 +81,8 @@ export const UI = {
     $playerScore.textContent = score
   },
 
-  setRobotScore(score) {
+  setRobotScore(score, $robotScore) {
+    // eslint-disable-next-line no-param-reassign
     $robotScore.textContent = score
   },
 
@@ -96,28 +93,37 @@ export const UI = {
     }, 1000)
   },
 
-  showRobotImage(show) {
+  showRobotImage(show, $robotImage, $robotHand) {
+    // eslint-disable-next-line no-param-reassign
     $robotImage.style.display = show ? 'block' : 'none'
+    // eslint-disable-next-line no-param-reassign
     $robotHand.style.display = show ? 'none' : 'block'
   },
 
-  showRobotHand(show) {
+  showRobotHand(show, $robotImage, $robotHand) {
+    console.log(show, $robotImage, $robotHand)
+    // eslint-disable-next-line no-param-reassign
     $robotHand.style.display = show ? 'block' : 'none'
+    // eslint-disable-next-line no-param-reassign
     $robotImage.style.display = show ? 'none' : 'block'
   },
 
-  setRobotGesture(gesture) {
+  setRobotGesture(gesture, $robotHand) {
     switch (gesture) {
       case 'rock':
+        // eslint-disable-next-line no-param-reassign
         $robotHand.src = 'assets/rock.png'
         break
       case 'paper':
+        // eslint-disable-next-line no-param-reassign
         $robotHand.src = 'assets/paper.png'
         break
       case 'scissors':
+        // eslint-disable-next-line no-param-reassign
         $robotHand.src = 'assets/scissors.png'
         break
       default:
+        // eslint-disable-next-line no-param-reassign
         $robotHand.src = ''
     }
   },

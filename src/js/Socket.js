@@ -10,17 +10,47 @@ const socketObject = {
   cbOnFinish: (gesture) => {
     console.log('fhinish mock')
   },
+  cbOnUserConnect: () => {
+    console.log('fhinish mock')
+  },
+  cbOnInit: (idUsers) => {
+    console.log('dfdf')
+  },
+  cbOnUserDisconnect: (idUser) => {
+    console.log('dfdf')
+  },
   send(gesture) {
     socket.emit('play', gesture);
   },
   finish(gesture) {
     this.cbOnFinish(gesture)
+  },
+  userConnect(idUser) {
+    this.cbOnUserConnect(idUser);
+  },
+  init(idUsers) {
+    this.cbOnInit(idUsers);
+  },
+  userDisconnect(idUser) {
+    this.cbOnUserDisconnect(idUser)
   }
 }
 
 socket.on("finish", (gesture) => {
   socketObject.finish(gesture)
 });
+
+socket.on("user-connect", (idUser) => {
+  socketObject.userConnect(idUser)
+})
+
+socket.on("init", (idUsers) => {
+  socketObject.init(idUsers);
+});
+
+socket.on("user-disconnect", (idUser) => {
+  socketObject.userDisconnect(idUser)
+})
 
 export {
   socketObject

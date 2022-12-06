@@ -7,12 +7,23 @@ import { socketObject } from './js/Socket'
 
 import camConfig from '@/js/CameraConfig'
 
+const createPlayerCard = (index) => `
+<div class="player" id="player-${index}">
+<h2 class="player-headline">
+  <span class="nick">Соперник</span>
+  <span class="score" id="score-${index}">0</span>
+</h2>
+<div class="robot-container">
+  <img id="robot-${index}" class="avatar" src="assets/human.png" alt="">
+  <img id="robot-hand-${index}" class="robot-hand" alt="">
+</div>
+</div>`;
+
 // store a reference to the player video
 let playerVideo
 
 // keep track of scores
 let playerScore = 0
-let computerScore = 0
 
 let isLoaded = false
 function removeProloader() {
@@ -22,7 +33,7 @@ function removeProloader() {
     prealoder.remove()
   }, 600)
 }
-// setyp & initialization
+// setup & initialization
 // -----------------------------------------------------------------------------
 async function onInit() {
   UI.init()
@@ -77,9 +88,12 @@ function waitForPlayer() {
 }
 
 async function playOneRound() {
-  // show robot waiting for player
-  UI.showRobotImage(true)
-
+  const avatars = document.querySelectorAll('.avatar')
+  const hands = document.querySelectorAll('.robot-hand')
+  avatars.forEach((a, index) => {
+    UI.showRobotImage(true, a, hands[index])
+  })
+  
   // hide the timer circle
   UI.showTimer(false)
   UI.setTimerProgress(0)
@@ -96,6 +110,32 @@ async function playOneRound() {
   // required duration 150ms ~ 4-5 camera frames
   // eslint-disable-next-line no-use-before-define
   detectPlayerGesture(150)
+}
+
+function createElementFromHTML(htmlString) {
+  const div = document.createElement('div');
+  div.innerHTML = htmlString.trim();
+  return div.firstChild;
+}
+
+socketObject.cbOnInit = (idUsers) => {
+  let card;
+  const messagesContainer = document.querySelector('.messages')
+  // eslint-disable-next-line no-restricted-syntax
+  for (const id of idUsers) {
+    card = createElementFromHTML(createPlayerCard(id))
+    messagesContainer.before(card)
+  }
+}
+
+socketObject.cbOnUserDisconnect = (idUser) => {
+  console.log(`#player-${idUser}`)
+  document.querySelector(`#player-${idUser}`).remove();
+}
+
+socketObject.cbOnUserConnect = (idUser) => {
+  const card = createElementFromHTML(createPlayerCard(idUser))
+  document.querySelector('.messages').before(card)
 }
 
 function detectPlayerGesture(requiredDuration) {
@@ -140,7 +180,9 @@ function detectPlayerGesture(requiredDuration) {
           socketObject.send(playerGesture)
           socketObject.cbOnFinish = (gesture) => {
             // eslint-disable-next-line no-use-before-define
-            checkResult(playerGesture, gesture)
+            console.log(gesture)
+            // eslint-disable-next-line no-use-before-define
+            checkResult(gesture)
           }
           
         }
@@ -151,69 +193,100 @@ function detectPlayerGesture(requiredDuration) {
   predictNonblocking()
 }
 
-function checkResult(playerGesture, computerGesture) {
-  let statusText
-  let playerWins = false
-  let computerWins = false
-
-  if (playerGesture === computerGesture) {
-    // draw
+function checkResult(gesture) {
+  let statusText;
+  let rockWins = false;
+  let papersWins = false;
+  let scissorWins = false;
+  const users = gesture.map(g => ({
+    id: g[0],
+    gesture: g[1]
+  }));
+  const gestures = users.map(u => u.gesture);
+  const uniqueGesture = new Set(gestures);
+  if (uniqueGesture.size === 3 || uniqueGesture === 1) {
     statusText = "Ничья!"
   } else {
-    // check whinner
-    // eslint-disable-next-line no-lonely-if
+    const [playerGesture, computerGesture] = Array.from(uniqueGesture);
+   
     if (playerGesture === 'rock') {
       if (computerGesture === 'scissors') {
-        playerWins = true
+        rockWins = true
         statusText = 'Камень бьет ножницы'
       } else {
-        computerWins = true
+        papersWins = true
         statusText = 'Бумага кроет камень'
       }
     } else if (playerGesture === 'paper') {
       if (computerGesture === 'rock') {
-        playerWins = true
+        papersWins = true
         statusText = 'Бумага кроет камень'
       } else {
-        computerWins = true
+        scissorWins = true
         statusText = 'Ножницы режут бумагу'
       }
     } else if (playerGesture === 'scissors') {
       if (computerGesture === 'paper') {
-        playerWins = true
+        scissorWins = true
         statusText = 'Ножницы режут бумагу'
       } else {
-        computerWins = true
+        rockWins = true
         statusText = 'Камень бьет ножницы'
       }
     }
   }
 
-  if (playerWins) {
-    playerScore += 1
-    statusText += ' - Ты победил!'
-  } else if (computerWins) {
-    computerScore += 1
-    statusText += ' - Соперник выиграл!'
+  if (rockWins) {
+    const idsWins = users.filter(user => user.gesture === 'rock').map(user => user.id);
+    idsWins.forEach(id => {
+      const score = document.querySelector(`#score-${id}`)
+      if (!score) {
+        playerScore += 1;
+        return
+      }
+      const scoreCount = parseInt(score.innerHTML, 10)
+      score.innerHTML = scoreCount + 1
+    })
   }
-
-  UI.showRobotHand(true)
-  UI.setRobotGesture(computerGesture)
+  if (scissorWins) {
+    const idsWins = users.filter(user => user.gesture === 'scissors').map(user => user.id);
+    idsWins.forEach(id => {
+      const score = document.querySelector(`#score-${id}`)
+      if (!score) {
+        playerScore += 1;
+        return
+      }
+      const scoreCount = parseInt(score.innerHTML, 10)
+      score.innerHTML = scoreCount + 1
+    })
+  }
+  if (papersWins) {
+    const idsWins = users.filter(user => user.gesture === 'paper').map(user => user.id);
+    idsWins.forEach(id => {
+      const score = document.querySelector(`#score-${id}`)
+      if (!score) {
+        playerScore += 1;
+        return
+      }
+      const scoreCount = parseInt(score.innerHTML, 10)
+      score.innerHTML = scoreCount + 1
+    })
+  }
+  users.forEach((user) => {
+    const userCard = document.querySelector(`#robot-${user.id}`)
+    if (!userCard) return;
+    const userHand = document.querySelector(`#robot-hand-${user.id}`)
+    UI.showRobotHand(true, userCard, userHand)
+    UI.setRobotGesture(user.gesture, userHand)
+  })
+ 
 
   UI.setStatusMessage(statusText)
-
   UI.setPlayerScore(playerScore)
-  UI.setRobotScore(computerScore)
+  // UI.setRobotScore(computerScore)
 
   // wait for 3 seconds, then start next round
   setTimeout(playOneRound, 3000)
 }
-
-function getRandomGesture() {
-  const gestures = ['rock', 'paper', 'scissors']
-  const randomNum = Math.floor(Math.random() * gestures.length)
-  return gestures[randomNum]
-}
-//-----
 
 onInit()
