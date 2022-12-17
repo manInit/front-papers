@@ -33,6 +33,15 @@ const socketObject = {
   },
   userDisconnect(idUser) {
     this.cbOnUserDisconnect(idUser)
+  },
+  emitGameOver() {
+    socket.emit('gameOver');
+    setTimeout(() => {
+      document.body.innerHTML = 'GAME OVER'
+    }, 100)
+  },
+  emitReady() {
+    socket.emit('ready')
   }
 }
 
@@ -50,6 +59,10 @@ socket.on("init", (idUsers) => {
 
 socket.on("user-disconnect", (idUser) => {
   socketObject.userDisconnect(idUser)
+})
+
+socket.on('disconnect', () => {
+  document.body.innerHTML = 'Игра уже идет'
 })
 
 export {

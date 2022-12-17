@@ -74,6 +74,8 @@ function waitForPlayer() {
 
   const startGame = () => {
     UI.stopAnimateMessage()
+    socketObject.emitReady()
+    
     // eslint-disable-next-line no-use-before-define
     playOneRound()
   }
@@ -204,7 +206,8 @@ function checkResult(gesture) {
   }));
   const gestures = users.map(u => u.gesture);
   const uniqueGesture = new Set(gestures);
-  if (uniqueGesture.size === 3 || uniqueGesture === 1) {
+
+  if (uniqueGesture.size === 3 || uniqueGesture.size === 1) {
     statusText = "Ничья!"
   } else {
     const [playerGesture, computerGesture] = Array.from(uniqueGesture);
@@ -234,44 +237,59 @@ function checkResult(gesture) {
         statusText = 'Камень бьет ножницы'
       }
     }
+
+    let playerWins = false;
+    if (rockWins) {
+      const idsWins = users.filter(user => user.gesture === 'rock').map(user => user.id);
+      idsWins.forEach(id => {
+        const score = document.querySelector(`#score-${id}`)
+        if (!score) {
+          playerScore += 1;
+          playerWins = true;
+          return
+        } 
+        
+        const scoreCount = parseInt(score.innerHTML, 10)
+        score.innerHTML = scoreCount + 1
+      })
+      if (!playerWins) {
+        socketObject.emitGameOver();
+      }
+    }
+    if (scissorWins) {
+      const idsWins = users.filter(user => user.gesture === 'scissors').map(user => user.id);
+      idsWins.forEach(id => {
+        const score = document.querySelector(`#score-${id}`)
+        if (!score) {
+          playerScore += 1;
+          playerWins = true;
+          return
+        }
+        const scoreCount = parseInt(score.innerHTML, 10)
+        score.innerHTML = scoreCount + 1
+      })
+      if (!playerWins) {
+        socketObject.emitGameOver();
+      }
+    }
+    if (papersWins) {
+      const idsWins = users.filter(user => user.gesture === 'paper').map(user => user.id);
+      idsWins.forEach(id => {
+        const score = document.querySelector(`#score-${id}`)
+        if (!score) {
+          playerScore += 1;
+          playerWins = true;
+          return
+        }
+        const scoreCount = parseInt(score.innerHTML, 10)
+        score.innerHTML = scoreCount + 1
+      })
+      if (!playerWins) {
+        socketObject.emitGameOver();
+      }
+    }
   }
 
-  if (rockWins) {
-    const idsWins = users.filter(user => user.gesture === 'rock').map(user => user.id);
-    idsWins.forEach(id => {
-      const score = document.querySelector(`#score-${id}`)
-      if (!score) {
-        playerScore += 1;
-        return
-      }
-      const scoreCount = parseInt(score.innerHTML, 10)
-      score.innerHTML = scoreCount + 1
-    })
-  }
-  if (scissorWins) {
-    const idsWins = users.filter(user => user.gesture === 'scissors').map(user => user.id);
-    idsWins.forEach(id => {
-      const score = document.querySelector(`#score-${id}`)
-      if (!score) {
-        playerScore += 1;
-        return
-      }
-      const scoreCount = parseInt(score.innerHTML, 10)
-      score.innerHTML = scoreCount + 1
-    })
-  }
-  if (papersWins) {
-    const idsWins = users.filter(user => user.gesture === 'paper').map(user => user.id);
-    idsWins.forEach(id => {
-      const score = document.querySelector(`#score-${id}`)
-      if (!score) {
-        playerScore += 1;
-        return
-      }
-      const scoreCount = parseInt(score.innerHTML, 10)
-      score.innerHTML = scoreCount + 1
-    })
-  }
   users.forEach((user) => {
     const userCard = document.querySelector(`#robot-${user.id}`)
     if (!userCard) return;
